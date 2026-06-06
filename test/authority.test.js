@@ -23,8 +23,8 @@ describe("getTier", () => {
     expect(getTier("nysd", "ca9")).toBe(4);
   });
 
-  it("without circuit, circuits are tier 2 and districts are tier 4", () => {
-    expect(getTier("ca9", null)).toBe(2);
+  it("without circuit, circuits are tier 3 (persuasive) and districts are tier 4", () => {
+    expect(getTier("ca9", null)).toBe(3);
     expect(getTier("cand", null)).toBe(4);
   });
 
@@ -60,5 +60,15 @@ describe("rankByAuthority", () => {
     const results = [{ court_id: "scotus", date_filed: "2000-01-01" }];
     const ranked = rankByAuthority(results, "ca9");
     expect(ranked[0].tier).toBe(1);
+  });
+
+  it("handles null date_filed without crashing", () => {
+    const results = [
+      { court_id: "ca9", date_filed: null },
+      { court_id: "ca2", date_filed: "2020-01-01" },
+    ];
+    const ranked = rankByAuthority(results, "ca9");
+    expect(ranked).toHaveLength(2);
+    expect(ranked[0].court_id).toBe("ca9");
   });
 });
