@@ -4,7 +4,7 @@ MCP server for federal case law research. One tool — `research(query, circuit?
 
 **SCOTUS > binding circuit > persuasive circuit > district**
 
-No existing legal MCP does this. They return flat search results. Stare returns a structured research memo with holdings and analysis, ranked by how much the court's opinion actually matters to your jurisdiction.
+Most legal search tools return flat result lists. Stare returns a structured research memo with holdings and analysis, ranked by how much the court's opinion actually matters to your jurisdiction.
 
 ## Setup
 
