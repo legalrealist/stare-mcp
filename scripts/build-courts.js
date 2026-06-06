@@ -4,8 +4,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// Pinned to courts-db v0.10.27 — update hash when upgrading.
 const SOURCE_URL =
-  "https://raw.githubusercontent.com/freelawproject/courts-db/main/courts_db/data/courts.json";
+  "https://raw.githubusercontent.com/freelawproject/courts-db/f353e51400a55cc8942b230b3e12540ad364fd23/courts_db/data/courts.json";
 
 const res = await fetch(SOURCE_URL);
 if (!res.ok) throw new Error(`Failed to fetch courts-db: ${res.status}`);
