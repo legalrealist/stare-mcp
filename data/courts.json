@@ -140,6 +140,11 @@
     "level": "district",
     "appeal_to": "ca11"
   },
+  "gud": {
+    "name": "District Court, D. Guam",
+    "level": "district",
+    "appeal_to": "ca9"
+  },
   "hid": {
     "name": "United States District Court for the District of Hawaii",
     "level": "district",
@@ -155,22 +160,72 @@
     "level": "district",
     "appeal_to": "ca7"
   },
+  "ilsd": {
+    "name": "District Court, S.D. Illinois",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
   "ca7": {
     "name": "Court of Appeals for the Seventh Circuit",
     "level": "circuit"
+  },
+  "ilcd": {
+    "name": "District Court, C.D. Illinois",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
+  "illinoisd": {
+    "name": "District Court, D. Illinois",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
+  "illinoised": {
+    "name": "District Court, E.D. Illinois",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
+  "innd": {
+    "name": "District Court, N.D. Indiana",
+    "level": "district",
+    "appeal_to": "ca7"
   },
   "insd": {
     "name": "District Court, S.D. Indiana",
     "level": "district",
     "appeal_to": "ca7"
   },
+  "indianad": {
+    "name": "United States District Court for the District of Indiana",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
+  "iand": {
+    "name": "District Court, N.D. Iowa",
+    "level": "district",
+    "appeal_to": "ca8"
+  },
+  "iasd": {
+    "name": "District Court, S.D. Iowa",
+    "level": "district",
+    "appeal_to": "ca8"
+  },
   "iad": {
     "name": "United States District Court for the District of Iowa",
     "level": "district",
     "appeal_to": "ca8"
   },
+  "ksd": {
+    "name": "District Court, D. Kansas",
+    "level": "district",
+    "appeal_to": "ca10"
+  },
   "kyed": {
     "name": "District Court, E.D. Kentucky",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
+  "kywd": {
+    "name": "District Court, W.D. Kentucky",
     "level": "district",
     "appeal_to": "ca6"
   },
@@ -198,10 +253,25 @@
     "name": "Court of Appeals for the Fifth Circuit",
     "level": "circuit"
   },
+  "orld": {
+    "name": "District Court, Orleans",
+    "level": "district",
+    "appeal_to": "ca9"
+  },
   "lad": {
     "name": "United States District Court for the District of Louisiana",
     "level": "district",
     "appeal_to": "ca5"
+  },
+  "med": {
+    "name": "District Court, D. Maine",
+    "level": "district",
+    "appeal_to": "ca1"
+  },
+  "mdd": {
+    "name": "District Court, D. Maryland",
+    "level": "district",
+    "appeal_to": "ca4"
   },
   "ca1": {
     "name": "Court of Appeals for the First Circuit",
@@ -212,14 +282,54 @@
     "level": "district",
     "appeal_to": "ca1"
   },
+  "mied": {
+    "name": "District Court, E.D. Michigan",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
+  "miwd": {
+    "name": "District Court, W.D. Michigan",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
+  "michd": {
+    "name": "District Court, D. Michigan",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
+  "mnd": {
+    "name": "District Court, D. Minnesota",
+    "level": "district",
+    "appeal_to": "ca8"
+  },
+  "msnd": {
+    "name": "District Court, N.D. Mississippi",
+    "level": "district",
+    "appeal_to": "ca5"
+  },
   "mssd": {
     "name": "District Court, S.D. Mississippi",
     "level": "district",
     "appeal_to": "ca5"
   },
+  "missd": {
+    "name": "District Court, D. Mississippi",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
+  "mowd": {
+    "name": "District Court, W.D. Missouri",
+    "level": "district",
+    "appeal_to": "ca8"
+  },
   "ca8": {
     "name": "Court of Appeals for the Eighth Circuit",
     "level": "circuit"
+  },
+  "mod": {
+    "name": "District Court, D. Missouri",
+    "level": "district",
+    "appeal_to": "ca8"
   },
   "moed": {
     "name": "District Court, E.D. Missouri",
@@ -236,18 +346,43 @@
     "level": "district",
     "appeal_to": "ca8"
   },
+  "nvd": {
+    "name": "District Court, D. Nevada",
+    "level": "district",
+    "appeal_to": "ca9"
+  },
   "nhd": {
     "name": "District Court, D. New Hampshire",
     "level": "district",
     "appeal_to": "ca1"
+  },
+  "njd": {
+    "name": "District Court, D. New Jersey",
+    "level": "district",
+    "appeal_to": "ca3"
+  },
+  "nmd": {
+    "name": "District Court, D. New Mexico",
+    "level": "district",
+    "appeal_to": "ca10"
   },
   "nyed": {
     "name": "District Court, E.D. New York",
     "level": "district",
     "appeal_to": "ca2"
   },
+  "nynd": {
+    "name": "District Court, N.D. New York",
+    "level": "district",
+    "appeal_to": "ca2"
+  },
   "nysd": {
     "name": "District Court, S.D. New York",
+    "level": "district",
+    "appeal_to": "ca2"
+  },
+  "nywd": {
+    "name": "District Court, W.D. New York",
     "level": "district",
     "appeal_to": "ca2"
   },
@@ -270,10 +405,20 @@
     "level": "district",
     "appeal_to": "ca4"
   },
+  "ncwd": {
+    "name": "District Court, W.D. North Carolina",
+    "level": "district",
+    "appeal_to": "ca4"
+  },
   "ncd": {
     "name": "United States District Court for the District of North Carolina",
     "level": "district",
     "appeal_to": "ca4"
+  },
+  "ndd": {
+    "name": "District Court, D. North Dakota",
+    "level": "district",
+    "appeal_to": "ca8"
   },
   "nmid": {
     "name": "District Court, Northern Mariana Islands",
@@ -290,8 +435,23 @@
     "level": "district",
     "appeal_to": "ca6"
   },
+  "ohiod": {
+    "name": "District Court, D. Ohio",
+    "level": "district",
+    "appeal_to": "ca6"
+  },
   "oked": {
     "name": "United States District Court, Oklahoma Eastern",
+    "level": "district",
+    "appeal_to": "ca10"
+  },
+  "oknd": {
+    "name": "United States District Court, Oklahoma Northern",
+    "level": "district",
+    "appeal_to": "ca10"
+  },
+  "okwd": {
+    "name": "United States District Court, Oklahoma Western",
     "level": "district",
     "appeal_to": "ca10"
   },
@@ -300,10 +460,25 @@
     "level": "district",
     "appeal_to": "ca10"
   },
+  "ord": {
+    "name": "District Court, D. Oregon",
+    "level": "district",
+    "appeal_to": "ca9"
+  },
   "canalzoned": {
     "name": "District Court, Canal Zone",
     "level": "district",
     "appeal_to": "ca9"
+  },
+  "paed": {
+    "name": "District Court, E.D. Pennsylvania",
+    "level": "district",
+    "appeal_to": "ca3"
+  },
+  "pamd": {
+    "name": "District Court, M.D. Pennsylvania",
+    "level": "district",
+    "appeal_to": "ca3"
   },
   "pawd": {
     "name": "District Court, W.D. Pennsylvania",
@@ -314,6 +489,10 @@
     "name": "Court of Appeals for the Third Circuit",
     "level": "circuit"
   },
+  "pennsylvaniad": {
+    "name": "District Court, D. Pennsylvania",
+    "level": "district"
+  },
   "prd": {
     "name": "District Court, D. Puerto Rico",
     "level": "district",
@@ -323,6 +502,15 @@
     "name": "District Court, D. Rhode Island",
     "level": "district",
     "appeal_to": "ca1"
+  },
+  "scd": {
+    "name": "District Court, D. South Carolina",
+    "level": "district",
+    "appeal_to": "ca4"
+  },
+  "southcarolinaed": {
+    "name": "District Court, E.D. South Carolina",
+    "level": "district"
   },
   "southcarolinawd": {
     "name": "District Court, W.D. South Carolina",
@@ -371,15 +559,38 @@
     "level": "district",
     "appeal_to": "ca5"
   },
+  "txwd": {
+    "name": "District Court, W.D. Texas",
+    "level": "district",
+    "appeal_to": "ca5"
+  },
+  "texd": {
+    "name": "District Court, D. Texas",
+    "level": "district"
+  },
+  "usdistct": {
+    "name": "United States District Court",
+    "level": "district"
+  },
   "utd": {
     "name": "District Court, D. Utah",
     "level": "district",
     "appeal_to": "ca10"
   },
+  "vtd": {
+    "name": "District Court, D. Vermont",
+    "level": "district",
+    "appeal_to": "ca1"
+  },
   "vid": {
     "name": "District Court, Virgin Islands",
     "level": "district",
     "appeal_to": "ca3"
+  },
+  "vaed": {
+    "name": "District Court, E.D. Virginia",
+    "level": "district",
+    "appeal_to": "ca4"
   },
   "vawd": {
     "name": "District Court, W.D. Virginia",
@@ -400,6 +611,11 @@
     "level": "district",
     "appeal_to": "ca9"
   },
+  "wawd": {
+    "name": "District Court, W.D. Washington",
+    "level": "district",
+    "appeal_to": "ca9"
+  },
   "washd": {
     "name": "United States District Court for the District of Washington",
     "level": "district",
@@ -413,6 +629,11 @@
     "name": "Court of Appeals for the Federal Circuit",
     "level": "circuit"
   },
+  "dcd": {
+    "name": "District Court, District of Columbia",
+    "level": "district",
+    "appeal_to": "cadc"
+  },
   "scotus": {
     "name": "Supreme Court of the United States",
     "level": "scotus"
@@ -422,8 +643,28 @@
     "level": "district",
     "appeal_to": "ca4"
   },
+  "wvsd": {
+    "name": "District Court, S.D. West Virginia",
+    "level": "district",
+    "appeal_to": "ca4"
+  },
+  "wvad": {
+    "name": "District Court, D. West Virginia",
+    "level": "district",
+    "appeal_to": "ca4"
+  },
+  "wvnb": {
+    "name": "United States District Court, N.D. West Virginia",
+    "level": "district",
+    "appeal_to": "ca4"
+  },
   "wisd": {
     "name": "District Court, D. Wisconsin",
+    "level": "district",
+    "appeal_to": "ca7"
+  },
+  "wied": {
+    "name": "District Court, E.D. Wisconsin",
     "level": "district",
     "appeal_to": "ca7"
   },

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "stare": {
+      "command": "node",
+      "args": ["lib/server.js"],
+      "env": {
+        "COURTLISTENER_API_KEY": ""
+      }
+    }
+  }
+}

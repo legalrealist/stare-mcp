@@ -22,12 +22,9 @@ const CIRCUIT_IDS = new Set([
 function classifyLevel(court) {
   if (court.id === "scotus") return "scotus";
   if (CIRCUIT_IDS.has(court.id)) return "circuit";
-  // District courts: type "trial" with "District Court" in the name,
-  // or FLP level "gjc" (general jurisdiction court).
-  if (
-    court.level === "gjc" ||
-    (court.type === "trial" && /district court/i.test(court.name))
-  ) {
+  // District courts: FLP level "gjc", or name contains "District Court"
+  // (some FLP entries have incorrect type/level, so name is most reliable).
+  if (court.level === "gjc" || /district court/i.test(court.name)) {
     return "district";
   }
   return null; // skip bankruptcy, special, and other courts
