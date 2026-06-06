@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getTier, rankByAuthority } from "../lib/authority.js";
+import { getTier, rankByAuthority, validateCircuit } from "../lib/authority.js";
 
 describe("getTier", () => {
   it("SCOTUS is always tier 1", () => {
@@ -70,5 +70,25 @@ describe("rankByAuthority", () => {
     const ranked = rankByAuthority(results, "ca9");
     expect(ranked).toHaveLength(2);
     expect(ranked[0].court_id).toBe("ca9");
+  });
+});
+
+describe("validateCircuit", () => {
+  it("accepts valid circuit IDs", () => {
+    expect(validateCircuit("ca9")).toBeNull();
+    expect(validateCircuit("ca2")).toBeNull();
+    expect(validateCircuit("cadc")).toBeNull();
+    expect(validateCircuit("cafc")).toBeNull();
+  });
+
+  it("accepts null/undefined (no circuit)", () => {
+    expect(validateCircuit(null)).toBeNull();
+    expect(validateCircuit(undefined)).toBeNull();
+  });
+
+  it("rejects invalid circuit IDs with helpful message", () => {
+    const err = validateCircuit("ca09");
+    expect(err).toContain('Unknown circuit "ca09"');
+    expect(err).toContain("ca9");
   });
 });
