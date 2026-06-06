@@ -1,0 +1,24 @@
+{
+  "name": "stare-mcp",
+  "version": "0.1.0",
+  "description": "Authority-aware federal case law research MCP server",
+  "type": "module",
+  "main": "lib/server.js",
+  "bin": {
+    "stare-mcp": "lib/server.js"
+  },
+  "scripts": {
+    "start": "node lib/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "eyecite-ts": "^0.29.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8"
+  }
+}
