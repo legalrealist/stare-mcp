@@ -49,7 +49,8 @@ describe("assembleResponse", () => {
     expect(md).toContain("Farmer v. Brennan");
     expect(md).toContain("## Tier 2");
     expect(md).toContain("Toguchi v. Chung");
-    expect(md).toContain("[holding]");
+    expect(md).toContain("[holding — heuristic]");
+    expect(md).toContain("Section labels are heuristic");
   });
 
   it("includes footer with hints", () => {
@@ -60,6 +61,26 @@ describe("assembleResponse", () => {
     }];
     const md = assembleResponse(opinions, { query: "test query" });
     expect(md).toContain("research(");
+  });
+
+  it("reports fetch failures explicitly", () => {
+    const opinions = [
+      {
+        tier: 1, tierLabel: "Controlling", case_name: "Good",
+        citation: "1 U.S. 1", court_name: "SCOTUS", date_filed: "2000-01-01",
+        fragments: [{ section: "holding", text: "Held." }],
+        totalFragments: 5,
+      },
+      {
+        tier: 3, tierLabel: "Persuasive", case_name: "Failed",
+        citation: "2 F.3d 2", court_name: "2nd Circuit", date_filed: "2020-01-01",
+        fragments: [{ section: "error", text: "(fetch failed: CL API 429)" }],
+        totalFragments: 0,
+      },
+    ];
+    const md = assembleResponse(opinions, { query: "test" });
+    expect(md).toContain("Retrieved 1 of 2 opinions");
+    expect(md).toContain("1 failed");
   });
 
   it("returns NO_AUTHORITY_FOUND for empty results", () => {
