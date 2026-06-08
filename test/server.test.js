@@ -6,121 +6,22 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = join(__dirname, "..", "lib", "server.js");
 
-function sendJsonRpc(message) {
-  return new Promise((resolve, reject) => {
-    const proc = spawn("node", [SERVER_PATH], {
-      env: { ...process.env, COURTLISTENER_API_KEY: "test-key" },
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    proc.stdout.on("data", (d) => (stdout += d.toString()));
-    proc.stderr.on("data", () => {});
-
-    proc.on("close", () => {
-      try {
-        const lines = stdout.trim().split("\n").filter(Boolean);
-        const responses = lines.map((l) => JSON.parse(l));
-        resolve(responses);
-      } catch (e) {
-        reject(new Error(`Failed to parse server output: ${stdout}`));
-      }
-    });
-
-    proc.stdin.write(JSON.stringify(message) + "\n");
-    setTimeout(() => proc.kill(), 3000);
-  });
-}
-
-describe("MCP server", () => {
-  it("responds to initialize", async () => {
-    const responses = await sendJsonRpc({
-      jsonrpc: "2.0",
-      id: 1,
-      method: "initialize",
-      params: {
-        protocolVersion: "2024-11-05",
-        capabilities: {},
-        clientInfo: { name: "test", version: "0.1.0" },
-      },
-    });
-
-    const initResponse = responses.find((r) => r.id === 1);
-    expect(initResponse).toBeDefined();
-    expect(initResponse.result.serverInfo.name).toBe("stare");
+function mcpSession(envOverrides = {}) {
+  const proc = spawn("node", [SERVER_PATH], {
+    env: { ...process.env, COURTLISTENER_API_KEY: "test-key", ...envOverrides },
+    stdio: ["pipe", "pipe", "pipe"],
   });
 
-  it("lists the research tool", async () => {
-    const proc = spawn("node", [SERVER_PATH], {
-      env: { ...process.env, COURTLISTENER_API_KEY: "test-key" },
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+  let stdout = "";
+  proc.stdout.on("data", (d) => (stdout += d.toString()));
+  proc.stderr.on("data", () => {});
 
-    let stdout = "";
-    proc.stdout.on("data", (d) => (stdout += d.toString()));
-    proc.stderr.on("data", () => {});
+  function send(msg) {
+    proc.stdin.write(JSON.stringify(msg) + "\n");
+  }
 
-    const result = await new Promise((resolve, reject) => {
-      proc.on("close", () => {
-        try {
-          const lines = stdout.trim().split("\n").filter(Boolean);
-          const responses = lines.map((l) => JSON.parse(l));
-          resolve(responses);
-        } catch (e) {
-          reject(new Error(`Parse error: ${stdout}`));
-        }
-      });
-
-      // Send initialize, then initialized notification, then tools/list
-      proc.stdin.write(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "initialize",
-          params: {
-            protocolVersion: "2024-11-05",
-            capabilities: {},
-            clientInfo: { name: "test", version: "0.1.0" },
-          },
-        }) + "\n"
-      );
-
-      setTimeout(() => {
-        proc.stdin.write(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            method: "notifications/initialized",
-          }) + "\n"
-        );
-        proc.stdin.write(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id: 2,
-            method: "tools/list",
-          }) + "\n"
-        );
-      }, 500);
-
-      setTimeout(() => proc.kill(), 4000);
-    });
-
-    const toolsResponse = result.find((r) => r.id === 2);
-    expect(toolsResponse).toBeDefined();
-    expect(toolsResponse.result.tools).toHaveLength(1);
-    expect(toolsResponse.result.tools[0].name).toBe("research");
-  }, 10000);
-
-  it("returns error when no API key is set", async () => {
-    const proc = spawn("node", [SERVER_PATH], {
-      env: { ...process.env, COURTLISTENER_API_KEY: "", CL_API_TOKEN: "" },
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    proc.stdout.on("data", (d) => (stdout += d.toString()));
-    proc.stderr.on("data", () => {});
-
-    const result = await new Promise((resolve, reject) => {
+  function collect() {
+    return new Promise((resolve, reject) => {
       proc.on("close", () => {
         try {
           const lines = stdout.trim().split("\n").filter(Boolean);
@@ -129,46 +30,62 @@ describe("MCP server", () => {
           reject(new Error(`Parse error: ${stdout}`));
         }
       });
-
-      proc.stdin.write(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "initialize",
-          params: {
-            protocolVersion: "2024-11-05",
-            capabilities: {},
-            clientInfo: { name: "test", version: "0.1.0" },
-          },
-        }) + "\n"
-      );
-
-      setTimeout(() => {
-        proc.stdin.write(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            method: "notifications/initialized",
-          }) + "\n"
-        );
-        proc.stdin.write(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id: 2,
-            method: "tools/call",
-            params: {
-              name: "research",
-              arguments: { query: "deliberate indifference" },
-            },
-          }) + "\n"
-        );
-      }, 500);
-
-      setTimeout(() => proc.kill(), 4000);
     });
+  }
 
-    const callResponse = result.find((r) => r.id === 2);
-    expect(callResponse).toBeDefined();
-    expect(callResponse.result.content[0].text).toContain("No CourtListener API key");
-    expect(callResponse.result.isError).toBe(true);
+  return { proc, send, collect };
+}
+
+describe("MCP server v2", () => {
+  it("responds to initialize with stare server info", async () => {
+    const { proc, send, collect } = mcpSession();
+    send({
+      jsonrpc: "2.0", id: 1, method: "initialize",
+      params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "test", version: "0.1.0" } },
+    });
+    setTimeout(() => proc.kill(), 3000);
+    const responses = await collect();
+    const init = responses.find((r) => r.id === 1);
+    expect(init).toBeDefined();
+    expect(init.result.serverInfo.name).toBe("stare");
+  });
+
+  it("lists search_cases and fetch_passages tools", async () => {
+    const { proc, send, collect } = mcpSession();
+    send({
+      jsonrpc: "2.0", id: 1, method: "initialize",
+      params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "test", version: "0.1.0" } },
+    });
+    setTimeout(() => {
+      send({ jsonrpc: "2.0", method: "notifications/initialized" });
+      send({ jsonrpc: "2.0", id: 2, method: "tools/list" });
+    }, 500);
+    setTimeout(() => proc.kill(), 4000);
+    const responses = await collect();
+    const tools = responses.find((r) => r.id === 2);
+    expect(tools).toBeDefined();
+    const names = tools.result.tools.map((t) => t.name).sort();
+    expect(names).toEqual(["fetch_passages", "search_cases"]);
+  }, 10000);
+
+  it("returns error envelope when no API key is set", async () => {
+    const { proc, send, collect } = mcpSession({ COURTLISTENER_API_KEY: "", CL_API_TOKEN: "" });
+    send({
+      jsonrpc: "2.0", id: 1, method: "initialize",
+      params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "test", version: "0.1.0" } },
+    });
+    setTimeout(() => {
+      send({ jsonrpc: "2.0", method: "notifications/initialized" });
+      send({
+        jsonrpc: "2.0", id: 2, method: "tools/call",
+        params: { name: "search_cases", arguments: { query: "test" } },
+      });
+    }, 500);
+    setTimeout(() => proc.kill(), 4000);
+    const responses = await collect();
+    const call = responses.find((r) => r.id === 2);
+    expect(call).toBeDefined();
+    const body = JSON.parse(call.result.content[0].text);
+    expect(body.error.code).toBe("no_api_key");
   }, 10000);
 });
