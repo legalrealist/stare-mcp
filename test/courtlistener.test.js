@@ -1,11 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock fetch before importing the module
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
-// Must dynamically import after stubbing fetch, and also need to mock
-// the courts.json read that happens at module load
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -23,7 +20,7 @@ vi.mock("node:fs", async (importOriginal) => {
   };
 });
 
-const { searchOpinions, fetchOpinion, lookupCitation } = await import(
+const { searchCases, lookupCitation, listOpinions, fetchOpinionText } = await import(
   "../lib/courtlistener.js"
 );
 
@@ -31,8 +28,8 @@ beforeEach(() => {
   mockFetch.mockReset();
 });
 
-describe("searchOpinions", () => {
-  it("maps CL search results to normalized shape", async () => {
+describe("searchCases", () => {
+  it("returns case metadata without opinion text", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -47,12 +44,13 @@ describe("searchOpinions", () => {
             snippet: "some snippet",
           },
         ],
+        next: "https://www.courtlistener.com/api/rest/v4/search/?cursor=abc",
       }),
     });
 
-    const results = await searchOpinions("test query", "fake-token");
-    expect(results).toHaveLength(1);
-    expect(results[0]).toEqual({
+    const result = await searchCases("test query", "fake-token");
+    expect(result.cases).toHaveLength(1);
+    expect(result.cases[0]).toEqual({
       cluster_id: 123,
       case_name: "Test v. Case",
       citation: "100 F.3d 200",
@@ -60,128 +58,163 @@ describe("searchOpinions", () => {
       date_filed: "2020-01-15",
       status: "Published",
       snippet: "some snippet",
+      source_url: "https://www.courtlistener.com/opinion/123/test-v-case/",
     });
+    expect(result.next_cursor).toBe("https://www.courtlistener.com/api/rest/v4/search/?cursor=abc");
   });
 
-  it("returns empty array when no results", async () => {
+  it("returns null next_cursor when no more pages", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ results: [] }),
+      json: async () => ({ results: [], next: null }),
     });
-    const results = await searchOpinions("nothing", "token");
-    expect(results).toEqual([]);
+    const result = await searchCases("nothing", "token");
+    expect(result.cases).toEqual([]);
+    expect(result.next_cursor).toBeNull();
   });
 
-  it("throws on non-2xx response", async () => {
+  it("returns classified error on 429", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
-    await expect(searchOpinions("test", "token")).rejects.toThrow("CL API 429");
+    const result = await searchCases("test", "token");
+    expect(result.error.code).toBe("rate_limited");
+    expect(result.error.retryable).toBe(true);
   });
 
-  it("respects count parameter", async () => {
-    const many = Array.from({ length: 20 }, (_, i) => ({
-      cluster_id: i,
-      caseName: `Case ${i}`,
-      citation: [],
-      court_id: "ca9",
-      dateFiled: "2020-01-01",
-    }));
+  it("returns classified error on 500", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
+    const result = await searchCases("test", "token");
+    expect(result.error.code).toBe("upstream_unavailable");
+  });
+
+  it("paginates via cursor URL", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ results: many }),
+      json: async () => ({ results: [{ cluster_id: 2, caseName: "Page 2", citation: [], court_id: "ca9", dateFiled: "2020-01-01" }], next: null }),
     });
-    const results = await searchOpinions("test", "token", { count: 5 });
-    expect(results).toHaveLength(5);
-  });
-});
-
-describe("fetchOpinion", () => {
-  it("fetches cluster then lead opinion text", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          sub_opinions: ["https://www.courtlistener.com/api/rest/v4/opinions/456/"],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          plain_text: "The court held that...",
-          type: "lead",
-        }),
-      });
-
-    const result = await fetchOpinion(123, "token");
-    expect(result.text).toBe("The court held that...");
-    expect(result.type).toBe("lead");
-  });
-
-  it("strips HTML when plain_text is empty", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          sub_opinions: ["https://cl.com/api/rest/v4/opinions/1/"],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          plain_text: "",
-          html_with_citations: "<p>First paragraph.</p><p>Second &amp; third.</p>",
-          type: "lead",
-        }),
-      });
-
-    const result = await fetchOpinion(1, "token");
-    expect(result.text).toContain("First paragraph.");
-    expect(result.text).toContain("Second & third.");
-    expect(result.text).not.toContain("<p>");
-  });
-
-  it("returns null when cluster has no sub_opinions", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ sub_opinions: [] }),
-    });
-    const result = await fetchOpinion(999, "token");
-    expect(result).toBeNull();
+    const result = await searchCases("test", "token", { cursor: "https://www.courtlistener.com/api/rest/v4/search/?cursor=abc" });
+    expect(result.cases).toHaveLength(1);
+    expect(mockFetch.mock.calls[0][0].toString()).toContain("cursor=abc");
   });
 });
 
 describe("lookupCitation", () => {
-  it("flattens clusters from CL response", async () => {
+  it("returns cluster metadata from citation lookup", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => [
         {
           citation: "511 U.S. 825",
           clusters: [
-            { id: 1087956, case_name: "Farmer v. Brennan", date_filed: "1994-06-06" },
+            {
+              id: 1087956,
+              case_name: "Farmer v. Brennan",
+              date_filed: "1994-06-06",
+              docket_id: 555,
+              sub_opinions: [
+                "https://www.courtlistener.com/api/rest/v4/opinions/9527063/",
+              ],
+            },
           ],
         },
       ],
     });
 
-    const results = await lookupCitation("511 U.S. 825", "token");
-    expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(1087956);
-    expect(results[0].case_name).toBe("Farmer v. Brennan");
+    const result = await lookupCitation("511 U.S. 825", "token");
+    expect(result.clusters).toHaveLength(1);
+    expect(result.clusters[0].id).toBe(1087956);
+    expect(result.clusters[0].case_name).toBe("Farmer v. Brennan");
   });
 
-  it("returns empty array when no clusters match", async () => {
+  it("returns empty clusters when no match", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => [],
     });
-    const results = await lookupCitation("999 U.S. 999", "token");
-    expect(results).toEqual([]);
+    const result = await lookupCitation("999 U.S. 999", "token");
+    expect(result.clusters).toEqual([]);
   });
 
-  it("throws on non-2xx instead of returning empty", async () => {
+  it("returns classified error on 429", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
-    await expect(lookupCitation("511 U.S. 825", "token")).rejects.toThrow(
-      "CL API 429"
-    );
+    const result = await lookupCitation("511 U.S. 825", "token");
+    expect(result.error.code).toBe("rate_limited");
+  });
+});
+
+describe("listOpinions", () => {
+  it("returns opinion metadata for a cluster", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        case_name: "Farmer v. Brennan",
+        date_filed: "1994-06-06",
+        sub_opinions: [
+          "https://www.courtlistener.com/api/rest/v4/opinions/456/",
+          "https://www.courtlistener.com/api/rest/v4/opinions/457/",
+        ],
+      }),
+    });
+    // Fetch opinion metadata for each sub_opinion
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 456, type: "010combined", author: "Souter" }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 457, type: "040dissent", author: "Thomas" }),
+    });
+
+    const result = await listOpinions(1087956, "token");
+    expect(result.opinions).toHaveLength(2);
+    expect(result.opinions[0]).toEqual({ opinion_id: 456, type: "lead", author: "Souter" });
+    expect(result.opinions[1]).toEqual({ opinion_id: 457, type: "dissent", author: "Thomas" });
+    expect(result.case_name).toBe("Farmer v. Brennan");
+  });
+
+  it("returns classified error on failure", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    const result = await listOpinions(999, "token");
+    expect(result.error.code).toBe("not_found");
+  });
+});
+
+describe("fetchOpinionText", () => {
+  it("returns plain text when available", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 456,
+        plain_text: "The court held that...\n\nSecond paragraph.",
+        type: "010combined",
+        author: "Souter",
+      }),
+    });
+
+    const result = await fetchOpinionText(456, "token");
+    expect(result.text).toBe("The court held that...\n\nSecond paragraph.");
+    expect(result.opinion_id).toBe(456);
+  });
+
+  it("strips HTML when plain_text is empty", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 1,
+        plain_text: "",
+        html_with_citations: "<p>First.</p><p>Second &amp; third.</p>",
+        type: "010combined",
+      }),
+    });
+
+    const result = await fetchOpinionText(1, "token");
+    expect(result.text).toContain("First.");
+    expect(result.text).toContain("Second & third.");
+    expect(result.text).not.toContain("<p>");
+  });
+
+  it("returns classified error on failure", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    const result = await fetchOpinionText(999, "token");
+    expect(result.error.code).toBe("not_found");
   });
 });
