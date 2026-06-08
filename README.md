@@ -1,19 +1,22 @@
 # stare-mcp
 
-MCP server for exploratory federal case law search. One tool — `research(query, circuit?)` — that searches [CourtListener](https://www.courtlistener.com/) and sorts results by court level:
+MCP server for exploratory federal case law search. Two tools that search [CourtListener](https://www.courtlistener.com/) and let you drill into specific opinions:
 
-**SCOTUS > binding circuit > persuasive circuit > district**
+- **`search_cases`** — search by legal issue or citation. Returns case metadata sorted by court level. No opinion text.
+- **`fetch_passages`** — retrieve paragraph-aligned text from a specific opinion. Stable fragment IDs for citation.
+
+All responses are structured JSON with provenance envelopes and pagination.
 
 ## Limitations
 
-This is a convenience layer over CourtListener's search API, not a legal research system. Important caveats:
+This is a convenience layer over CourtListener's search API, not a legal research system.
 
-- **Retrieval is not reliable.** Results come from keyword relevance ranking, then get sorted by court level. Controlling authority can be missed entirely if it doesn't score in the top 20 search results. The system cannot tell you what it didn't find.
-- **No citator or negative treatment.** There is no check for whether a case has been overruled, distinguished, or superseded. A returned "holding" may be bad law.
-- **Section labels are heuristic.** "Holding" and "analysis" labels use regex pattern matching on structural headers and transition phrases. They are frequently wrong. Verify against the full opinion before citing.
-- **No recall measurement.** There is no benchmark of queries and expected authorities. Output quality is untested beyond "does it return plausible-looking results."
+- **Retrieval is not reliable.** Results come from keyword relevance ranking. Controlling authority can be missed entirely if it doesn't score in the result window.
+- **No citator or negative treatment.** There is no check for whether a case has been overruled, distinguished, or superseded.
+- **No section labels.** Text is returned as-is. The tool does not guess which paragraphs are holdings.
+- **No recall measurement.** Output quality is untested against a benchmark of expected authorities.
 
-Use this for exploratory research — finding starting points, not establishing the state of the law.
+Use this for finding starting points, not establishing the state of the law.
 
 ## Setup
 
@@ -22,8 +25,6 @@ npm install
 ```
 
 Get a [CourtListener API key](https://www.courtlistener.com/help/api/rest/#permissions) (free tier: 5 req/min).
-
-Add to your MCP client config (Claude Code, Claude Desktop, etc.):
 
 ```json
 {
@@ -41,26 +42,67 @@ Add to your MCP client config (Claude Code, Claude Desktop, etc.):
 
 ## Usage
 
-**Search by legal issue:**
-```
-research("deliberate indifference standard", circuit: "ca9")
-```
-Returns results sorted by court level: SCOTUS first, then 9th Circuit, then other circuits, then district courts. Fragments are labeled heuristically as holding, analysis, etc.
+### Search for cases
 
-**Fetch a specific opinion by citation:**
 ```
-research("511 U.S. 825")
+search_cases(query: "deliberate indifference standard", circuit: "ca9")
 ```
-Returns Farmer v. Brennan with heuristically labeled sections (capped at 30 fragments).
 
-## How it works
+Returns JSON with case metadata, authority tier, court name, citation, and source URL. Sorted by court level: SCOTUS > binding circuit > persuasive > district. Paginate with the `cursor` field from the response.
 
-1. Detects whether query is a citation or a search (via [eyecite-ts](https://github.com/freelawproject/eyecite))
-2. Searches CourtListener for published/precedential federal opinions
-3. Sorts results by court level relative to your circuit
-4. Fetches top 1-2 opinions per tier in parallel
-5. Chunks opinions into paragraphs, applies heuristic section labels
-6. Returns holding/analysis fragments, grouped by court level
+### Look up a citation
+
+```
+search_cases(query: "511 U.S. 825")
+```
+
+Returns matching cluster(s) with available opinion IDs (lead, concurrence, dissent).
+
+### Retrieve opinion text
+
+```
+fetch_passages(opinion_id: 9527063)
+```
+
+Returns up to 30 paragraphs per call with stable fragment IDs (`cl:9527063:p0`, `cl:9527063:p1`, ...). Paginate with the `cursor` field.
+
+You can also pass `cluster_id` instead of `opinion_id` — if there's one clear lead opinion, it auto-selects. If multiple substantive opinions exist, it returns `selection_required` with the available opinion IDs and types.
+
+### Response format
+
+Every response is a JSON envelope:
+
+```json
+{
+  "data": { "..." : "..." },
+  "provenance": {
+    "source": "CourtListener",
+    "api_version": "v4",
+    "retrieved_at": "2026-06-08T12:00:00Z",
+    "query": "deliberate indifference",
+    "result_window": 20
+  },
+  "pagination": {
+    "next_cursor": null,
+    "has_more": false
+  }
+}
+```
+
+Errors use the same envelope shape with an `error` field instead of `data`:
+
+```json
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "CourtListener rate limit exceeded.",
+    "retryable": true
+  },
+  "provenance": { "..." : "..." }
+}
+```
+
+Error codes: `no_api_key`, `invalid_circuit`, `invalid_opinion_id`, `rate_limited`, `upstream_unavailable`, `not_found`, `upstream_error`, `selection_required`.
 
 ## Valid circuit values
 
@@ -71,7 +113,7 @@ Omit `circuit` to get all results as persuasive authority (no binding tier).
 ## Development
 
 ```bash
-npm test              # run tests (52 tests across 7 files)
+npm test              # run tests
 npm run test:watch    # watch mode
 node lib/server.js --help
 ```
