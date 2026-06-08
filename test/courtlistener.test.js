@@ -221,6 +221,51 @@ describe("listOpinions", () => {
     expect(result.opinions).toHaveLength(1);
     expect(result.skipped_opinions).toBe(1);
   });
+
+  it("reports malformed sub-opinion references as skipped", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        case_name: "Test Case",
+        date_filed: "2020-01-01",
+        sub_opinions: [
+          "not-an-opinion-url",
+          {},
+          "/api/rest/v4/opinions/123/",
+        ],
+      }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 123, type: "010combined", author: null }),
+    });
+
+    const result = await listOpinions(42, "token");
+    expect(result.skipped_opinions).toBe(2);
+    expect(result.opinions).toEqual([
+      { opinion_id: 123, type: "lead", author: null },
+    ]);
+  });
+
+  it("reports an empty partial result when every opinion fetch fails", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        case_name: "Test Case",
+        date_filed: "2020-01-01",
+        sub_opinions: [
+          "/api/rest/v4/opinions/123/",
+          "/api/rest/v4/opinions/124/",
+        ],
+      }),
+    });
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 });
+
+    const result = await listOpinions(42, "token");
+    expect(result.opinions).toEqual([]);
+    expect(result.skipped_opinions).toBe(2);
+  });
 });
 
 describe("fetchOpinionText", () => {
