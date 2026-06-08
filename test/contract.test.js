@@ -42,11 +42,13 @@ describe("contract: error codes are from taxonomy", () => {
     "no_api_key",
     "invalid_circuit",
     "invalid_opinion_id",
+    "invalid_cursor",
     "rate_limited",
     "upstream_unavailable",
     "not_found",
     "upstream_error",
     "selection_required",
+    "content_unavailable",
   ]);
 
   it("classifyHttpError produces only valid codes", () => {
@@ -72,5 +74,30 @@ describe("contract: pagination cursor roundtrip", () => {
     const startIndex = parseInt(cursor.replace(/^p/, ""), 10);
     expect(startIndex).toBe(30);
     expect(Number.isInteger(startIndex)).toBe(true);
+  });
+
+  it("cursor regex rejects malformed cursors", () => {
+    const CURSOR_RE = /^p\d+$/;
+    expect(CURSOR_RE.test("p30")).toBe(true);
+    expect(CURSOR_RE.test("p0")).toBe(true);
+    expect(CURSOR_RE.test("30garbage")).toBe(false);
+    expect(CURSOR_RE.test("p30garbage")).toBe(false);
+    expect(CURSOR_RE.test("")).toBe(false);
+    expect(CURSOR_RE.test("https://attacker.example/")).toBe(false);
+  });
+});
+
+describe("contract: selection_required includes opinions", () => {
+  it("error object can carry opinions array", () => {
+    const err = makeError("selection_required", "Multiple opinions");
+    err.opinions = [
+      { opinion_id: 456, type: "lead", author: "Souter" },
+      { opinion_id: 457, type: "dissent", author: "Thomas" },
+    ];
+    err.cluster_id = 123;
+    const env = errorEnvelope(err, { cluster_id: 123 });
+    expect(env.error.opinions).toHaveLength(2);
+    expect(env.error.opinions[0].opinion_id).toBe(456);
+    expect(env.error.cluster_id).toBe(123);
   });
 });

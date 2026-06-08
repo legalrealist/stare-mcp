@@ -60,7 +60,8 @@ describe("searchCases", () => {
       snippet: "some snippet",
       source_url: "https://www.courtlistener.com/opinion/123/test-v-case/",
     });
-    expect(result.next_cursor).toBe("https://www.courtlistener.com/api/rest/v4/search/?cursor=abc");
+    // next_cursor is the extracted opaque token, not the full URL (prevents SSRF)
+    expect(result.next_cursor).toBe("abc");
   });
 
   it("returns null next_cursor when no more pages", async () => {
@@ -86,14 +87,33 @@ describe("searchCases", () => {
     expect(result.error.code).toBe("upstream_unavailable");
   });
 
-  it("paginates via cursor URL", async () => {
+  it("paginates via opaque cursor token", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [{ cluster_id: 2, caseName: "Page 2", citation: [], court_id: "ca9", dateFiled: "2020-01-01" }], next: null }),
     });
-    const result = await searchCases("test", "token", { cursor: "https://www.courtlistener.com/api/rest/v4/search/?cursor=abc" });
+    // Cursor is an opaque token — the CL URL is reconstructed server-side
+    const result = await searchCases("test", "token", { cursor: "cj0xJnA9MjAyMQ" });
     expect(result.cases).toHaveLength(1);
-    expect(mockFetch.mock.calls[0][0].toString()).toContain("cursor=abc");
+    // Verify the cursor was set as a query param on a courtlistener.com URL
+    const calledUrl = mockFetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("www.courtlistener.com");
+    expect(calledUrl).toContain("cursor=cj0xJnA9MjAyMQ");
+  });
+
+  it("never sends auth token to non-CL URLs", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [],
+        // CL returns a full URL in `next` — we extract only the cursor param
+        next: "https://www.courtlistener.com/api/rest/v4/search/?cursor=safe_token&type=o",
+      }),
+    });
+    const result = await searchCases("test", "token");
+    // The returned cursor should be just the token, not the full URL
+    expect(result.next_cursor).toBe("safe_token");
+    expect(result.next_cursor).not.toContain("http");
   });
 });
 
@@ -175,6 +195,31 @@ describe("listOpinions", () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
     const result = await listOpinions(999, "token");
     expect(result.error.code).toBe("not_found");
+  });
+
+  it("reports skipped opinions when sub-opinion fetches fail", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        case_name: "Test Case",
+        date_filed: "2020-01-01",
+        sub_opinions: [
+          "https://www.courtlistener.com/api/rest/v4/opinions/100/",
+          "https://www.courtlistener.com/api/rest/v4/opinions/101/",
+        ],
+      }),
+    });
+    // First sub-opinion succeeds
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 100, type: "010combined", author: "Smith" }),
+    });
+    // Second sub-opinion fails (rate limited)
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
+
+    const result = await listOpinions(42, "token");
+    expect(result.opinions).toHaveLength(1);
+    expect(result.skipped_opinions).toBe(1);
   });
 });
 

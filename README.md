@@ -64,7 +64,7 @@ Returns matching cluster(s) with available opinion IDs (lead, concurrence, disse
 fetch_passages(opinion_id: 9527063)
 ```
 
-Returns up to 30 paragraphs per call with stable fragment IDs (`cl:9527063:p0`, `cl:9527063:p1`, ...). Paginate with the `cursor` field.
+Returns up to 30 paragraphs per call with retrieval fragment IDs (`cl:9527063:p0`, `cl:9527063:p1`, ...) for referencing passages. These are position-based and stable only while the upstream text is unchanged — they are not judicial paragraph citations. Paginate with the `cursor` field.
 
 You can also pass `cluster_id` instead of `opinion_id` — if there's one clear lead opinion, it auto-selects. If multiple substantive opinions exist, it returns `selection_required` with the available opinion IDs and types.
 
@@ -102,7 +102,7 @@ Errors use the same envelope shape with an `error` field instead of `data`:
 }
 ```
 
-Error codes: `no_api_key`, `invalid_circuit`, `invalid_opinion_id`, `rate_limited`, `upstream_unavailable`, `not_found`, `upstream_error`, `selection_required`.
+Error codes: `no_api_key`, `invalid_circuit`, `invalid_opinion_id`, `invalid_cursor`, `rate_limited`, `upstream_unavailable`, `not_found`, `upstream_error`, `selection_required`, `content_unavailable`.
 
 ## Valid circuit values
 
