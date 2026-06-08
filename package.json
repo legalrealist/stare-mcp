@@ -1,7 +1,7 @@
 {
   "name": "stare-mcp",
-  "version": "0.1.0",
-  "description": "Authority-aware federal case law research MCP server",
+  "version": "0.2.0",
+  "description": "Exploratory federal case law search MCP server",
   "type": "module",
   "main": "lib/server.js",
   "bin": {
