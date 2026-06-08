@@ -100,4 +100,16 @@ describe("contract: selection_required includes opinions", () => {
     expect(env.error.opinions[0].opinion_id).toBe(456);
     expect(env.error.cluster_id).toBe(123);
   });
+
+  it("partial selection_required carries skipped count and partial flag", () => {
+    const err = makeError("selection_required", "Cannot safely auto-select");
+    err.opinions = [{ opinion_id: 457, type: "dissent", author: "Thomas" }];
+    err.skipped_opinions = 1;
+    err.partial = true;
+    err.cluster_id = 123;
+    const env = errorEnvelope(err, { cluster_id: 123 });
+    expect(env.error.partial).toBe(true);
+    expect(env.error.skipped_opinions).toBe(1);
+    expect(env.error.opinions).toHaveLength(1);
+  });
 });
