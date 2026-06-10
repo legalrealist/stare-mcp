@@ -228,13 +228,14 @@ describe("fetchOpinionText", () => {
         id: 456,
         plain_text: "The court held that...\n\nSecond paragraph.",
         type: "010combined",
-        author: "Souter",
+        author_str: "Souter",
       }),
     });
 
     const result = await fetchOpinionText(456, "token");
     expect(result.text).toBe("The court held that...\n\nSecond paragraph.");
     expect(result.opinion_id).toBe(456);
+    expect(result.author).toBe("Souter");
   });
 
   it("strips HTML when plain_text is empty", async () => {
@@ -252,6 +253,42 @@ describe("fetchOpinionText", () => {
     expect(result.text).toContain("First.");
     expect(result.text).toContain("Second & third.");
     expect(result.text).not.toContain("<p>");
+  });
+
+  it("falls back through html, html_lawbox, xml_harvard", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 2,
+        plain_text: "",
+        html_lawbox: "<p>Lawbox only text.</p>",
+        type: "010combined",
+      }),
+    });
+    const lawbox = await fetchOpinionText(2, "token");
+    expect(lawbox.text).toContain("Lawbox only text.");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 3,
+        plain_text: "",
+        xml_harvard: "<opinion><p>Harvard XML text.</p></opinion>",
+        type: "010combined",
+      }),
+    });
+    const harvard = await fetchOpinionText(3, "token");
+    expect(harvard.text).toContain("Harvard XML text.");
+    expect(harvard.text).not.toContain("<opinion>");
+  });
+
+  it("returns empty text when no text fields are populated", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 4, plain_text: "", type: "010combined" }),
+    });
+    const result = await fetchOpinionText(4, "token");
+    expect(result.text).toBe("");
   });
 
   it("returns classified error on failure", async () => {
