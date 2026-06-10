@@ -162,109 +162,44 @@ describe("lookupCitation", () => {
 });
 
 describe("listOpinions", () => {
-  it("returns opinion metadata for a cluster", async () => {
+  it("returns all opinions for a cluster in a single request", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        case_name: "Farmer v. Brennan",
-        date_filed: "1994-06-06",
-        sub_opinions: [
-          "https://www.courtlistener.com/api/rest/v4/opinions/456/",
-          "https://www.courtlistener.com/api/rest/v4/opinions/457/",
+        results: [
+          { id: 456, type: "020lead", author_str: "Souter" },
+          { id: 457, type: "040dissent", author_str: "Thomas" },
         ],
       }),
-    });
-    // Fetch opinion metadata for each sub_opinion
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 456, type: "010combined", author: "Souter" }),
-    });
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 457, type: "040dissent", author: "Thomas" }),
     });
 
     const result = await listOpinions(1087956, "token");
     expect(result.opinions).toHaveLength(2);
     expect(result.opinions[0]).toEqual({ opinion_id: 456, type: "lead", author: "Souter" });
     expect(result.opinions[1]).toEqual({ opinion_id: 457, type: "dissent", author: "Thomas" });
-    expect(result.case_name).toBe("Farmer v. Brennan");
+    expect(result.cluster_id).toBe(1087956);
+    // One request total — no per-opinion fan-out
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const calledUrl = mockFetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("cluster__id=1087956");
+    expect(calledUrl).toContain("fields=");
+  });
+
+  it("maps empty author_str to null", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [{ id: 1087956, type: "010combined", author_str: "" }],
+      }),
+    });
+    const result = await listOpinions(1087956, "token");
+    expect(result.opinions[0].author).toBeNull();
   });
 
   it("returns classified error on failure", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
     const result = await listOpinions(999, "token");
     expect(result.error.code).toBe("not_found");
-  });
-
-  it("reports skipped opinions when sub-opinion fetches fail", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        case_name: "Test Case",
-        date_filed: "2020-01-01",
-        sub_opinions: [
-          "https://www.courtlistener.com/api/rest/v4/opinions/100/",
-          "https://www.courtlistener.com/api/rest/v4/opinions/101/",
-        ],
-      }),
-    });
-    // First sub-opinion succeeds
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 100, type: "010combined", author: "Smith" }),
-    });
-    // Second sub-opinion fails (rate limited)
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
-
-    const result = await listOpinions(42, "token");
-    expect(result.opinions).toHaveLength(1);
-    expect(result.skipped_opinions).toBe(1);
-  });
-
-  it("reports malformed sub-opinion references as skipped", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        case_name: "Test Case",
-        date_filed: "2020-01-01",
-        sub_opinions: [
-          "not-an-opinion-url",
-          {},
-          "/api/rest/v4/opinions/123/",
-        ],
-      }),
-    });
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 123, type: "010combined", author: null }),
-    });
-
-    const result = await listOpinions(42, "token");
-    expect(result.skipped_opinions).toBe(2);
-    expect(result.opinions).toEqual([
-      { opinion_id: 123, type: "lead", author: null },
-    ]);
-  });
-
-  it("reports an empty partial result when every opinion fetch fails", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        case_name: "Test Case",
-        date_filed: "2020-01-01",
-        sub_opinions: [
-          "/api/rest/v4/opinions/123/",
-          "/api/rest/v4/opinions/124/",
-        ],
-      }),
-    });
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 });
-
-    const result = await listOpinions(42, "token");
-    expect(result.opinions).toEqual([]);
-    expect(result.skipped_opinions).toBe(2);
   });
 });
 
