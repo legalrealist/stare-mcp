@@ -50,7 +50,7 @@ describe("MCP server v2", () => {
     expect(init.result.serverInfo.name).toBe("stare");
   });
 
-  it("lists search_cases and fetch_passages tools", async () => {
+  it("lists search_cases, fetch_passages, and list_courts tools", async () => {
     const { proc, send, collect } = mcpSession();
     send({
       jsonrpc: "2.0", id: 1, method: "initialize",
@@ -65,7 +65,31 @@ describe("MCP server v2", () => {
     const tools = responses.find((r) => r.id === 2);
     expect(tools).toBeDefined();
     const names = tools.result.tools.map((t) => t.name).sort();
-    expect(names).toEqual(["fetch_passages", "search_cases"]);
+    expect(names).toEqual(["fetch_passages", "list_courts", "search_cases"]);
+  }, 10000);
+
+  it("list_courts works without an API key (local data)", async () => {
+    const { proc, send, collect } = mcpSession({ COURTLISTENER_API_KEY: "", CL_API_TOKEN: "" });
+    send({
+      jsonrpc: "2.0", id: 1, method: "initialize",
+      params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "test", version: "0.1.0" } },
+    });
+    setTimeout(() => {
+      send({ jsonrpc: "2.0", method: "notifications/initialized" });
+      send({
+        jsonrpc: "2.0", id: 2, method: "tools/call",
+        params: { name: "list_courts", arguments: { level: "circuit" } },
+      });
+    }, 500);
+    setTimeout(() => proc.kill(), 4000);
+    const responses = await collect();
+    const call = responses.find((r) => r.id === 2);
+    expect(call).toBeDefined();
+    const body = JSON.parse(call.result.content[0].text);
+    expect(body.data.length).toBe(13);
+    expect(body.data[0]).toHaveProperty("court_id");
+    expect(body.data[0].level).toBe("circuit");
+    expect(body.provenance.source).toBe("courts-db (Free Law Project)");
   }, 10000);
 
   it("returns error envelope when no API key is set", async () => {

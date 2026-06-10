@@ -3,7 +3,8 @@
 MCP server for exploratory federal case law search. Two tools that search [CourtListener](https://www.courtlistener.com/) and let you drill into specific opinions:
 
 - **`search_cases`** — search by legal issue or citation. Returns case metadata sorted by court level. No opinion text.
-- **`fetch_passages`** — retrieve paragraph-aligned text from a specific opinion. Stable fragment IDs for citation.
+- **`fetch_passages`** — retrieve paragraph-aligned text from a specific opinion, with retrieval fragment IDs for referencing passages.
+- **`list_courts`** — list covered federal courts with IDs, levels, and circuit assignments. Local data, no API request.
 
 All responses are structured JSON with provenance envelopes and pagination.
 
