@@ -77,6 +77,14 @@ Returns up to 30 paragraphs per call with retrieval fragment IDs (`cl:9527063:p0
 
 You can also pass `cluster_id` instead of `opinion_id` — if there's one clear lead opinion, it auto-selects. If multiple substantive opinions exist, it returns `selection_required` with the available opinion IDs and types.
 
+### Re-fetch a cited passage
+
+```
+fetch_passages(fragment_id: "cl:9527063:p12")
+```
+
+Returns paragraph 12 with two paragraphs of context on each side — useful for verifying a previously cited passage. If the upstream text changed and the paragraph index no longer exists, you get `not_found` rather than a silently different passage.
+
 ### Response format
 
 Every response is a JSON envelope:

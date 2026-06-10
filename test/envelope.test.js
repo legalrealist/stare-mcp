@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { successEnvelope, errorEnvelope, FRAGMENT_PREFIX, fragmentId } from "../lib/envelope.js";
+import { successEnvelope, errorEnvelope, FRAGMENT_PREFIX, fragmentId, parseFragmentId } from "../lib/envelope.js";
 
 describe("successEnvelope", () => {
   it("wraps data with provenance and pagination", () => {
@@ -51,5 +51,26 @@ describe("fragmentId", () => {
   it("produces cl:{opinionId}:p{index} format", () => {
     expect(fragmentId(1087956, 0)).toBe("cl:1087956:p0");
     expect(fragmentId(456, 12)).toBe("cl:456:p12");
+  });
+});
+
+describe("parseFragmentId", () => {
+  it("roundtrips with fragmentId", () => {
+    expect(parseFragmentId(fragmentId(1087956, 12))).toEqual({
+      opinion_id: 1087956,
+      paragraph: 12,
+    });
+    expect(parseFragmentId("cl:456:p0")).toEqual({ opinion_id: 456, paragraph: 0 });
+  });
+
+  it("returns null for malformed IDs", () => {
+    expect(parseFragmentId("cl:abc:p1")).toBeNull();
+    expect(parseFragmentId("cl:123:p")).toBeNull();
+    expect(parseFragmentId("cl:123")).toBeNull();
+    expect(parseFragmentId("123:p4")).toBeNull();
+    expect(parseFragmentId("cl:123:p4:extra")).toBeNull();
+    expect(parseFragmentId("")).toBeNull();
+    expect(parseFragmentId(null)).toBeNull();
+    expect(parseFragmentId(undefined)).toBeNull();
   });
 });
