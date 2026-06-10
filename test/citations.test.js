@@ -25,6 +25,11 @@ describe("isCitation", () => {
   it("rejects queries with citations embedded in prose", () => {
     expect(isCitation("see 511 U.S. 825 and also")).toBe(false);
   });
+
+  it("rejects CourtListener query operators (must route to search path)", () => {
+    expect(isCitation("cites:(9527063)")).toBe(false);
+    expect(isCitation("related:9527063")).toBe(false);
+  });
 });
 
 describe("parseCitation", () => {

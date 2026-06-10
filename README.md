@@ -48,7 +48,16 @@ Get a [CourtListener API key](https://www.courtlistener.com/help/api/rest/#permi
 search_cases(query: "deliberate indifference standard", circuit: "ca9")
 ```
 
-Returns JSON with case metadata, authority tier, court name, citation, and source URL. Sorted by court level: SCOTUS > binding circuit > persuasive > district. Paginate with the `cursor` field from the response.
+Returns JSON with case metadata, authority tier, court name, citation, `citation_count`, and source URL. Sorted by court level: SCOTUS > binding circuit > persuasive > district. Paginate with the `cursor` field from the response.
+
+### Explore the citation graph
+
+```
+search_cases(query: "cites:(9527063)")
+search_cases(query: "related:9527063")
+```
+
+`cites:(<opinion_id>)` finds cases that cite a given opinion; `related:<opinion_id>` finds similar cases. Both are CourtListener query operators passed through the normal search. `citation_count` in results signals how often a case is cited — influence, not validity. None of this is a citator: there is still no negative-treatment check.
 
 ### Look up a citation
 

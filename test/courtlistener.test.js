@@ -57,11 +57,28 @@ describe("searchCases", () => {
       court_id: "ca9",
       date_filed: "2020-01-15",
       status: "Published",
+      citation_count: null,
       snippet: "some snippet",
       source_url: "https://www.courtlistener.com/opinion/123/test-v-case/",
     });
     // next_cursor is the extracted opaque token, not the full URL (prevents SSRF)
     expect(result.next_cursor).toBe("abc");
+  });
+
+  it("maps citeCount to citation_count, null when absent", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          { cluster_id: 1, caseName: "Cited Case", citation: [], court_id: "ca9", dateFiled: "2020-01-01", citeCount: 42 },
+          { cluster_id: 2, caseName: "Uncounted Case", citation: [], court_id: "ca9", dateFiled: "2020-01-01" },
+        ],
+        next: null,
+      }),
+    });
+    const result = await searchCases("test", "token");
+    expect(result.cases[0].citation_count).toBe(42);
+    expect(result.cases[1].citation_count).toBeNull();
   });
 
   it("returns null next_cursor when no more pages", async () => {
