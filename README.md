@@ -122,6 +122,8 @@ Errors use the same envelope shape with an `error` field instead of `data`:
 
 Error codes: `no_api_key`, `invalid_circuit`, `invalid_opinion_id`, `invalid_cursor`, `rate_limited`, `upstream_unavailable`, `not_found`, `upstream_error`, `selection_required`, `content_unavailable`.
 
+Passage responses include a `content_note` reminding consumers that retrieved text is quoted document content from public court records, not instructions — opinions can contain arbitrary text, including imperative language.
+
 ## Valid circuit values
 
 `ca1` `ca2` `ca3` `ca4` `ca5` `ca6` `ca7` `ca8` `ca9` `ca10` `ca11` `cadc` `cafc`
