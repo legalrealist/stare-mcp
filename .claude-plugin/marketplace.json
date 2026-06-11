@@ -1,0 +1,14 @@
+{
+  "name": "stare",
+  "description": "Exploratory federal case law tools for CourtListener — search, passage retrieval, citation verification.",
+  "owner": {
+    "name": "Hao Zhu"
+  },
+  "plugins": [
+    {
+      "name": "stare",
+      "source": "./",
+      "description": "Exploratory federal case law search via CourtListener: search cases, retrieve opinion passages, verify citations against the official database, and see how cases are cited."
+    }
+  ]
+}

@@ -1,12 +1,33 @@
 {
   "name": "stare-mcp",
   "version": "0.4.0",
-  "description": "Exploratory federal case law search MCP server",
+  "description": "Exploratory federal case law search MCP server — CourtListener search, passage retrieval, citation verification",
   "type": "module",
   "main": "lib/server.js",
   "bin": {
     "stare-mcp": "lib/server.js"
   },
+  "files": [
+    "lib/",
+    "data/",
+    "README.md",
+    "COURTS-DB-LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/legalrealist/stare-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "legal",
+    "case-law",
+    "courtlistener",
+    "citations"
+  ],
   "scripts": {
     "start": "node lib/server.js",
     "test": "vitest run",

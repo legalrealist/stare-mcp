@@ -21,13 +21,36 @@ This is a convenience layer over CourtListener's search API, not a legal researc
 
 Use this for finding starting points, not establishing the state of the law.
 
-## Setup
+## Install
+
+All options require a [CourtListener API key](https://www.courtlistener.com/help/api/rest/#permissions) (free tier: 5 req/min).
+
+### As a Claude Code plugin (recommended)
 
 ```bash
-npm install
+export COURTLISTENER_API_KEY="your-key-here"   # add to ~/.zshrc
 ```
 
-Get a [CourtListener API key](https://www.courtlistener.com/help/api/rest/#permissions) (free tier: 5 req/min).
+Then in Claude Code:
+
+```
+/plugin marketplace add legalrealist/stare-mcp
+/plugin install stare@stare
+```
+
+The plugin runs the npm-published server via `npx`, so there is nothing else to install.
+
+### Via claude mcp add
+
+```bash
+claude mcp add stare -e COURTLISTENER_API_KEY=your-key-here -- npx -y stare-mcp
+```
+
+### From source
+
+```bash
+git clone https://github.com/legalrealist/stare-mcp && cd stare-mcp && npm install
+```
 
 ```json
 {

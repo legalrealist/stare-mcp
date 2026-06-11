@@ -1,0 +1,21 @@
+{
+  "name": "stare",
+  "description": "Exploratory federal case law search via CourtListener: search cases, retrieve opinion passages, verify citations against the official database, and see how cases are cited.",
+  "version": "0.4.0",
+  "author": {
+    "name": "Hao Zhu"
+  },
+  "homepage": "https://github.com/legalrealist/stare-mcp",
+  "repository": "https://github.com/legalrealist/stare-mcp",
+  "license": "MIT",
+  "mcpServers": {
+    "stare": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "stare-mcp@latest"],
+      "env": {
+        "COURTLISTENER_API_KEY": "${COURTLISTENER_API_KEY}"
+      }
+    }
+  }
+}
