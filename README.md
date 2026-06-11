@@ -4,6 +4,8 @@ MCP server for exploratory federal case law search. Two tools that search [Court
 
 - **`search_cases`** — search by legal issue or citation. Returns case metadata sorted by court level. No opinion text.
 - **`fetch_passages`** — retrieve paragraph-aligned text from a specific opinion, with retrieval fragment IDs for referencing passages.
+- **`verify_citations`** — validate every case citation in a block of text against CourtListener. Catches fabricated citations.
+- **`how_cited`** — list cases citing an opinion, newest first. Evidence for treatment analysis, not verdicts.
 - **`list_courts`** — list covered federal courts with IDs, levels, and circuit assignments. Local data, no API request.
 
 All responses are structured JSON with provenance envelopes and pagination.
@@ -77,6 +79,22 @@ fetch_passages(opinion_id: 9527063)
 Returns up to 30 paragraphs per call with retrieval fragment IDs (`cl:9527063:p0`, `cl:9527063:p1`, ...) for referencing passages. These are position-based and stable only while the upstream text is unchanged — they are not judicial paragraph citations. Paginate with the `cursor` field.
 
 You can also pass `cluster_id` instead of `opinion_id` — if there's one clear lead opinion, it auto-selects. If multiple substantive opinions exist, it returns `selection_required` with the available opinion IDs and types.
+
+### Verify citations in a draft
+
+```
+verify_citations(text: "As held in Farmer v. Brennan, 511 U.S. 825 (1994)... See also Smith v. Jones, 999 U.S. 999 (2050).")
+```
+
+Every citation in the text is checked against CourtListener: `verified` (with the matched case), `not_found` (likely fabricated), or `ambiguous` (multiple matches). A summary gives counts per status. This verifies that citations **exist** — not that quotes or holdings attributed to them are accurate.
+
+### See how a case has been cited
+
+```
+how_cited(opinion_id: 9527063)
+```
+
+Returns cases citing that opinion, newest first, with court, date, and `citation_count`. To see how a citing case discusses the opinion, retrieve its text with `fetch_passages`. The tool does not classify treatment as positive or negative, and it is not a citator.
 
 ### Re-fetch a cited passage
 

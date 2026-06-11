@@ -50,7 +50,7 @@ describe("MCP server v2", () => {
     expect(init.result.serverInfo.name).toBe("stare");
   });
 
-  it("lists search_cases, fetch_passages, and list_courts tools", async () => {
+  it("lists all five tools", async () => {
     const { proc, send, collect } = mcpSession();
     send({
       jsonrpc: "2.0", id: 1, method: "initialize",
@@ -65,7 +65,7 @@ describe("MCP server v2", () => {
     const tools = responses.find((r) => r.id === 2);
     expect(tools).toBeDefined();
     const names = tools.result.tools.map((t) => t.name).sort();
-    expect(names).toEqual(["fetch_passages", "list_courts", "search_cases"]);
+    expect(names).toEqual(["fetch_passages", "how_cited", "list_courts", "search_cases", "verify_citations"]);
   }, 10000);
 
   it("list_courts works without an API key (local data)", async () => {

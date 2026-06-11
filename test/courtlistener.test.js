@@ -20,7 +20,7 @@ vi.mock("node:fs", async (importOriginal) => {
   };
 });
 
-const { searchCases, lookupCitation, listOpinions, fetchOpinionText } = await import(
+const { searchCases, lookupCitation, listOpinions, fetchOpinionText, verifyCitations } = await import(
   "../lib/courtlistener.js"
 );
 
@@ -174,6 +174,99 @@ describe("lookupCitation", () => {
   it("returns classified error on 429", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
     const result = await lookupCitation("511 U.S. 825", "token");
+    expect(result.error.code).toBe("rate_limited");
+  });
+});
+
+describe("searchCases orderBy", () => {
+  it("defaults to score desc and accepts an override", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [], next: null }),
+    });
+    await searchCases("test", "token");
+    expect(mockFetch.mock.calls[0][0].toString()).toContain("order_by=score+desc");
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ results: [], next: null }),
+    });
+    await searchCases("test", "token", { orderBy: "dateFiled desc" });
+    expect(mockFetch.mock.calls[1][0].toString()).toContain("order_by=dateFiled+desc");
+  });
+});
+
+describe("verifyCitations", () => {
+  it("maps per-citation status codes to named statuses", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          citation: "511 U.S. 825",
+          normalized_citations: ["511 U.S. 825"],
+          start_index: 30,
+          end_index: 42,
+          status: 200,
+          error_message: "",
+          clusters: [
+            { id: 1087956, case_name: "Farmer v. Brennan", date_filed: "1994-06-06", absolute_url: "/opinion/1087956/farmer-v-brennan/" },
+          ],
+        },
+        {
+          citation: "999 U.S. 999",
+          normalized_citations: ["999 U.S. 999"],
+          start_index: 100,
+          end_index: 112,
+          status: 404,
+          error_message: "Citation not found: '999 U.S. 999'",
+          clusters: [],
+        },
+        {
+          citation: "1 F.2d 1",
+          normalized_citations: ["1 F.2d 1"],
+          start_index: 200,
+          end_index: 208,
+          status: 300,
+          error_message: "",
+          clusters: [
+            { id: 10, case_name: "A v. B", date_filed: "1924-01-01", absolute_url: "/opinion/10/a-v-b/" },
+            { id: 11, case_name: "C v. D", date_filed: "1924-02-01", absolute_url: "/opinion/11/c-v-d/" },
+          ],
+        },
+      ],
+    });
+
+    const result = await verifyCitations("some draft text", "token");
+    expect(result.citations).toHaveLength(3);
+
+    expect(result.citations[0].status).toBe("verified");
+    expect(result.citations[0].matches[0]).toEqual({
+      cluster_id: 1087956,
+      case_name: "Farmer v. Brennan",
+      date_filed: "1994-06-06",
+      source_url: "https://www.courtlistener.com/opinion/1087956/farmer-v-brennan/",
+    });
+
+    expect(result.citations[1].status).toBe("not_found");
+    expect(result.citations[1].error_message).toContain("not found");
+    expect(result.citations[1].matches).toEqual([]);
+
+    expect(result.citations[2].status).toBe("ambiguous");
+    expect(result.citations[2].matches).toHaveLength(2);
+  });
+
+  it("returns empty citations for text with no citations", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+    const result = await verifyCitations("no citations here", "token");
+    expect(result.citations).toEqual([]);
+  });
+
+  it("returns classified error on endpoint failure", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
+    const result = await verifyCitations("text", "token");
     expect(result.error.code).toBe("rate_limited");
   });
 });
