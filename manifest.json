@@ -1,0 +1,51 @@
+{
+  "manifest_version": "0.2",
+  "name": "stare-mcp",
+  "display_name": "Stare — Federal Case Law",
+  "version": "0.4.0",
+  "description": "Exploratory federal case law search via CourtListener: search cases, retrieve opinion passages, verify citations, and see how cases are cited.",
+  "long_description": "Five tools over the CourtListener API: search_cases (metadata-only search sorted by court level), fetch_passages (paragraph-aligned opinion text with retrieval fragment IDs), verify_citations (batch-validate citations in a draft against the official database — catches fabricated citations), how_cited (cases citing an opinion, newest first), and list_courts (federal court reference data). All responses are structured JSON with provenance envelopes. This is an exploratory surface, not a legal research system: no citator, no negative-treatment checks.",
+  "author": {
+    "name": "Hao Zhu"
+  },
+  "homepage": "https://github.com/legalrealist/stare-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/legalrealist/stare-mcp"
+  },
+  "license": "MIT",
+  "keywords": ["legal", "case-law", "courtlistener", "citations"],
+  "server": {
+    "type": "node",
+    "entry_point": "lib/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/lib/server.js"],
+      "env": {
+        "COURTLISTENER_API_KEY": "${user_config.courtlistener_api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "courtlistener_api_key": {
+      "type": "string",
+      "title": "CourtListener API key",
+      "description": "Get a free key at courtlistener.com/help/api/rest (free tier: 5 requests/minute).",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "tools": [
+    { "name": "search_cases", "description": "Search federal case law or look up a citation; metadata sorted by court level" },
+    { "name": "fetch_passages", "description": "Retrieve paragraph-aligned opinion text with retrieval fragment IDs" },
+    { "name": "verify_citations", "description": "Validate every citation in a block of text against CourtListener" },
+    { "name": "how_cited", "description": "List cases citing an opinion, newest first" },
+    { "name": "list_courts", "description": "List covered federal courts (local data, no API request)" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20"
+    }
+  }
+}
