@@ -40,6 +40,10 @@ Then in Claude Code:
 
 The plugin runs the npm-published server via `npx`, so there is nothing else to install.
 
+### Claude Desktop
+
+Download `stare-mcp.mcpb` from the [latest release](https://github.com/legalrealist/stare-mcp/releases/latest) and double-click it (or Settings → Extensions → Advanced → Install Extension). Desktop prompts for your API key in a masked field. To rebuild the bundle from source: `./scripts/build-mcpb.sh`.
+
 ### Via claude mcp add
 
 ```bash
